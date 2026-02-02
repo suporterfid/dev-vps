@@ -431,19 +431,19 @@ fi
 
 # Install Codex CLI (OpenAI)
 log_info "Installing Codex CLI (OpenAI)..."
-npm install -g @openai/codex
+npm install -g @openai/codex 2>/dev/null || log_warning "Codex CLI not available, may need manual installation"
 
 # Install Gemini CLI (Google)
 log_info "Installing Gemini CLI..."
-npm install -g @anthropic-ai/claude-cli || npm install -g @google/generative-ai-cli || log_warning "Gemini CLI not available in npm, may need manual installation"
+npm install -g @google/gemini-cli 2>/dev/null || log_warning "Gemini CLI not available in npm, install manually: https://github.com/google-gemini/gemini-cli"
 
 # Install OpenCode (if available)
 log_info "Installing OpenCode..."
-npm install -g opencode-ai 2>/dev/null || log_warning "OpenCode package not found, skipping"
+npm install -g @anthropic-ai/opencode 2>/dev/null || npm install -g opencode-ai 2>/dev/null || log_warning "OpenCode package not found, skipping"
 
 # Install Qodo Command (AI Agent Framework)
 log_info "Installing Qodo..."
-npm install -g qodo 2>/dev/null || python3 -m pip install --user qodo-ai 2>/dev/null || log_warning "Qodo not found in package managers"
+npm install -g qodo 2>/dev/null || python3 -m pip install --user qodo-gen 2>/dev/null || log_warning "Qodo not found in package managers"
 
 # Add Python user bin to PATH if not already there
 if ! grep -q 'local/bin' ~/.bashrc; then
@@ -654,6 +654,7 @@ alias ai='aider'
 alias aic='aider --model sonnet'
 alias aig='aider --model gpt-4o'
 alias ask='sgpt'
+# Note: Run 'ollama pull deepseek-coder' first to use this alias
 alias ollama-code='ollama run deepseek-coder'
 
 # Quick AI helpers
@@ -665,10 +666,21 @@ ask-code() {
     sgpt --code "$@"
 }
 
-# Git commit with AI
+# Git commit with AI review (shows diff first, requires confirmation)
 gac() {
+    echo "Staging all changes..."
     git add -A
-    aider --message "review and commit changes" --yes
+    echo ""
+    echo "Current changes:"
+    git diff --cached --stat
+    echo ""
+    read -p "Proceed with AI-assisted commit review? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        aider --message "review and commit changes"
+    else
+        echo "Aborted. Changes remain staged."
+    fi
 }
 
 # Quick edit configs
