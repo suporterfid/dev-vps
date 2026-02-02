@@ -50,6 +50,7 @@ Complete development environment setup script for Ubuntu 24.04 LTS VPS, optimize
 - ✅ **PostgreSQL client**
 - ✅ **Redis CLI**
 - ✅ **SQLite**
+- ✅ **mongosh** - MongoDB Shell
 
 ### Developer Tools
 - ✅ **Claude Code CLI** - AI-assisted coding
