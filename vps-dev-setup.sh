@@ -404,10 +404,64 @@ fi
 log_success "Claude Code CLI installed"
 
 ################################################################################
-# 11. ANDROID DEVELOPMENT ENVIRONMENT
+# 11. AI CLI TOOLS
 ################################################################################
 
-log_info "Step 11: Installing Android development environment..."
+log_info "Step 11: Installing AI CLI Tools..."
+
+# Install Shell-GPT (sgpt) - Simple CLI assistant
+log_info "Installing Shell-GPT..."
+python3 -m pip install --user shell-gpt
+
+# Install Aider - AI pair programming
+log_info "Installing Aider..."
+python3 -m pip install --user aider-chat
+
+# Install Ollama - Local LLM runtime
+log_info "Installing Ollama..."
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Install GitHub Copilot CLI extension
+log_info "Installing GitHub Copilot CLI extension..."
+if command -v gh &> /dev/null; then
+    gh extension install github/gh-copilot || log_warning "GitHub Copilot CLI extension installation failed (may require authentication)"
+else
+    log_warning "GitHub CLI not found, skipping GitHub Copilot CLI extension"
+fi
+
+# Install Codex CLI (OpenAI)
+log_info "Installing Codex CLI (OpenAI)..."
+npm install -g @openai/codex 2>/dev/null || log_warning "Codex CLI not available, may need manual installation"
+
+# Install Gemini CLI (Google)
+log_info "Installing Gemini CLI..."
+npm install -g @google/gemini-cli 2>/dev/null || log_warning "Gemini CLI not available in npm, install manually: https://github.com/google-gemini/gemini-cli"
+
+# Install OpenCode (if available)
+log_info "Installing OpenCode..."
+npm install -g @anthropic-ai/opencode 2>/dev/null || npm install -g opencode-ai 2>/dev/null || log_warning "OpenCode package not found, skipping"
+
+# Install Qodo Command (AI Agent Framework)
+log_info "Installing Qodo..."
+npm install -g qodo 2>/dev/null || python3 -m pip install --user qodo-gen 2>/dev/null || log_warning "Qodo not found in package managers"
+
+# Add Python user bin to PATH if not already there
+if ! grep -q 'local/bin' ~/.bashrc; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+fi
+
+log_success "AI CLI Tools installed"
+log_info "  - Shell-GPT (sgpt) - Simple CLI assistant"
+log_info "  - Aider - AI pair programming"
+log_info "  - Ollama - Local LLM runtime"
+log_info "  - GitHub Copilot CLI (gh copilot)"
+log_info "  - Codex CLI (OpenAI)"
+
+################################################################################
+# 12. ANDROID DEVELOPMENT ENVIRONMENT
+################################################################################
+
+log_info "Step 12: Installing Android development environment..."
 
 # Install OpenJDK 17 (required for Android development)
 sudo apt install -y openjdk-17-jdk openjdk-17-jre
@@ -488,10 +542,10 @@ log_info "  - Android Platform Tools"
 log_info "  - Gradle ${GRADLE_VERSION}"
 
 ################################################################################
-# 12. ADDITIONAL DEVELOPMENT TOOLS
+# 13. ADDITIONAL DEVELOPMENT TOOLS
 ################################################################################
 
-log_info "Step 12: Installing additional development tools..."
+log_info "Step 13: Installing additional development tools..."
 
 # Install GitHub CLI
 (type -p wget >/dev/null || (sudo apt update && sudo apt install -y wget)) \
@@ -526,10 +580,10 @@ sudo apt install -y exa
 log_success "Additional development tools installed"
 
 ################################################################################
-# 13. BASH ALIASES & ENVIRONMENT
+# 14. BASH ALIASES & ENVIRONMENT
 ################################################################################
 
-log_info "Step 13: Setting up bash aliases and environment..."
+log_info "Step 14: Setting up bash aliases and environment..."
 
 # Add useful aliases to .bashrc
 cat >> ~/.bashrc << 'EOF'
@@ -595,6 +649,40 @@ alias tn='tmux new -s'
 # Claude Code shortcut
 alias cc='claude-code'
 
+# AI Tools Aliases
+alias ai='aider'
+alias aic='aider --model sonnet'
+alias aig='aider --model gpt-4o'
+alias ask='sgpt'
+# Note: Run 'ollama pull deepseek-coder' first to use this alias
+alias ollama-code='ollama run deepseek-coder'
+
+# Quick AI helpers
+ask-cmd() {
+    sgpt --shell "$@"
+}
+
+ask-code() {
+    sgpt --code "$@"
+}
+
+# Git commit with AI review (shows diff first, requires confirmation)
+gac() {
+    echo "Staging all changes..."
+    git add -A
+    echo ""
+    echo "Current changes:"
+    git diff --cached --stat
+    echo ""
+    read -p "Proceed with AI-assisted commit review? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        aider --message "review and commit changes"
+    else
+        echo "Aborted. Changes remain staged."
+    fi
+}
+
 # Quick edit configs
 alias bashrc='vim ~/.bashrc'
 alias tmuxconf='vim ~/.tmux.conf'
@@ -607,10 +695,10 @@ EOF
 log_success "Bash aliases and environment configured"
 
 ################################################################################
-# 14. SECURITY SETUP
+# 15. SECURITY SETUP
 ################################################################################
 
-log_info "Step 14: Configuring basic security..."
+log_info "Step 15: Configuring basic security..."
 
 # Configure UFW firewall
 sudo ufw default deny incoming
@@ -627,10 +715,10 @@ sudo systemctl start fail2ban
 log_success "Basic security configured (UFW + fail2ban)"
 
 ################################################################################
-# 15. WORKSPACE SETUP
+# 16. WORKSPACE SETUP
 ################################################################################
 
-log_info "Step 15: Creating workspace directories..."
+log_info "Step 16: Creating workspace directories..."
 
 # Create standard workspace structure
 mkdir -p ~/projects/{web,api,mobile,automation,experiments}
@@ -641,7 +729,7 @@ mkdir -p ~/logs
 log_success "Workspace directories created"
 
 ################################################################################
-# 16. SYSTEM INFO & FINAL STEPS
+# 17. SYSTEM INFO & FINAL STEPS
 ################################################################################
 
 echo ""
@@ -690,6 +778,17 @@ if [ -d "$ANDROID_HOME" ]; then
     echo "    Platforms:    android-34, android-35"
 fi
 echo ""
+echo "  AI CLI Tools:"
+if command -v sgpt &> /dev/null; then
+    echo "    Shell-GPT:    $(sgpt --version 2>/dev/null || echo 'installed')"
+fi
+if command -v aider &> /dev/null; then
+    echo "    Aider:        $(aider --version 2>/dev/null || echo 'installed')"
+fi
+if command -v ollama &> /dev/null; then
+    echo "    Ollama:       $(ollama --version 2>/dev/null || echo 'installed')"
+fi
+echo ""
 
 echo "============================================================================"
 log_warning "IMPORTANT: Next Steps"
@@ -709,10 +808,19 @@ echo ""
 echo "  4. Authenticate Claude Code:"
 echo "     claude-code auth"
 echo ""
-echo "  5. Start a tmux session:"
+echo "  5. Configure AI API keys (optional):"
+echo "     export OPENAI_API_KEY='your-openai-key'       # For Shell-GPT, Aider with GPT"
+echo "     export ANTHROPIC_API_KEY='your-anthropic-key' # For Aider with Claude"
+echo "     # Add these to ~/.bashrc for persistence"
+echo ""
+echo "  6. Download a local model for Ollama (optional):"
+echo "     ollama pull deepseek-coder    # For coding tasks"
+echo "     ollama pull llama3            # General purpose"
+echo ""
+echo "  7. Start a tmux session:"
 echo "     tmux new -s work"
 echo ""
-echo "  6. Clone your repositories:"
+echo "  8. Clone your repositories:"
 echo "     cd ~/projects/web"
 echo "     git clone <your-repo-url>"
 echo ""
@@ -753,6 +861,17 @@ echo ""
 echo "  Git:"
 echo "    lazygit                   - Beautiful Git UI"
 echo "    gh                        - GitHub CLI"
+echo ""
+echo "  AI Tools:"
+echo "    cc                        - Claude Code"
+echo "    ai / aider                - AI pair programming"
+echo "    aic                       - Aider with Claude Sonnet"
+echo "    aig                       - Aider with GPT-4o"
+echo "    ask / sgpt                - Shell-GPT CLI assistant"
+echo "    ask-cmd '<query>'         - Get shell commands"
+echo "    ask-code '<query>'        - Generate code"
+echo "    ollama run <model>        - Run local LLM"
+echo "    gac                       - Git add + AI commit"
 echo ""
 echo "============================================================================"
 
