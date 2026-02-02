@@ -621,18 +621,18 @@ log_success "Database clients installed"
 log_step "Step 10: Installing Claude Code CLI..."
 
 # Check if Claude Code is already installed
-if command_exists claude || file_exists "$HOME/.claude/bin/claude"; then
+if command_exists claude; then
     log_skip "Claude Code CLI"
 else
     log_info "Installing Claude Code CLI..."
-    curl -fsSL https://claude.ai/cli/install.sh | sh 2>&1 | tee -a "$LOG_FILE"
-    log_success "Claude Code CLI installed"
-fi
-
-# Add to PATH if not already there
-if ! pattern_in_file '.claude/bin' ~/.bashrc; then
-    log_info "Adding Claude Code to PATH..."
-    echo 'export PATH="$HOME/.claude/bin:$PATH"' >> ~/.bashrc
+    # Install via npm (requires Node.js to be installed first)
+    if command_exists npm; then
+        npm install -g @anthropic-ai/claude-code 2>&1 | tee -a "$LOG_FILE" && \
+            log_success "Claude Code CLI installed" || \
+            log_warning "Claude Code CLI installation failed, try manually: npm install -g @anthropic-ai/claude-code"
+    else
+        log_warning "npm not found, skipping Claude Code CLI installation. Install Node.js first, then run: npm install -g @anthropic-ai/claude-code"
+    fi
 fi
 
 ################################################################################
@@ -697,13 +697,9 @@ fi
 # Skipping - users can install manually when available
 # log_info "OpenCode: Not yet available in npm, skipping"
 
-# Note: Qodo (qodo-gen) can be installed via pipx if needed
-if pipx list 2>/dev/null | grep -q "package qodo-gen" || command_exists qodo; then
-    log_skip "Qodo"
-else
-    log_info "Installing Qodo..."
-    pipx install qodo-gen 2>&1 | tee -a "$LOG_FILE" || log_warning "Qodo installation failed, may need manual installation"
-fi
+# Note: Qodo (formerly Codium AI) is primarily a VS Code/IDE extension
+# There is no standalone CLI package available via pip/pipx
+# Users can install the VS Code extension manually: https://www.qodo.ai/
 
 # Add Python user bin to PATH if not already there
 if ! pattern_in_file 'local/bin' ~/.bashrc; then
