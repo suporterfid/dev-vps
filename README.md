@@ -133,6 +133,228 @@ claude-code auth
 docker run hello-world
 ```
 
+## 🔑 Accessing Private GitHub Repositories
+
+To clone and work with private GitHub repositories on your VPS, you need to set up authentication. Here are the recommended methods:
+
+### Method 1: SSH Keys (Recommended)
+
+SSH keys provide secure, password-less authentication for all your GitHub repositories.
+
+#### Step 1: Generate SSH Key
+
+```bash
+# Generate a new ED25519 SSH key (recommended)
+ssh-keygen -t ed25519 -C "your.email@example.com"
+
+# Or use RSA if ED25519 is not supported
+ssh-keygen -t rsa -b 4096 -C "your.email@example.com"
+```
+
+When prompted:
+- Press Enter to accept the default file location (`~/.ssh/id_ed25519`)
+- Enter a passphrase for extra security (optional but recommended)
+
+#### Step 2: Add SSH Key to GitHub
+
+```bash
+# Display your public key
+cat ~/.ssh/id_ed25519.pub
+```
+
+Copy the output and add it to GitHub:
+1. Go to [GitHub SSH Settings](https://github.com/settings/keys)
+2. Click **New SSH key**
+3. Give it a descriptive title (e.g., "VPS Development Server")
+4. Paste your public key
+5. Click **Add SSH key**
+
+#### Step 3: Test the Connection
+
+```bash
+# Test SSH connection to GitHub
+ssh -T git@github.com
+```
+
+You should see: `Hi username! You've successfully authenticated...`
+
+#### Step 4: Clone Repositories Using SSH
+
+```bash
+# Clone using SSH URL (starts with git@github.com:)
+git clone git@github.com:username/private-repo.git
+
+# Or update existing repo to use SSH
+git remote set-url origin git@github.com:username/private-repo.git
+```
+
+### Method 2: GitHub CLI Authentication
+
+The GitHub CLI (`gh`) provides easy authentication with browser-based login.
+
+```bash
+# Start authentication
+gh auth login
+
+# Follow the prompts:
+# 1. Select GitHub.com
+# 2. Select SSH as preferred protocol
+# 3. Upload your SSH key (or generate a new one)
+# 4. Complete browser-based authentication
+
+# Verify authentication
+gh auth status
+
+# Clone private repositories
+gh repo clone username/private-repo
+```
+
+### Method 3: Deploy Keys (For Specific Repositories)
+
+Use deploy keys when you need read-only access to specific repositories (useful for CI/CD or automated deployments).
+
+```bash
+# Generate a dedicated key for the specific repo
+ssh-keygen -t ed25519 -C "deploy-key-myproject" -f ~/.ssh/deploy_myproject
+
+# Display the public key
+cat ~/.ssh/deploy_myproject.pub
+```
+
+Add the deploy key to your repository:
+1. Go to your repository on GitHub
+2. Navigate to **Settings** → **Deploy keys**
+3. Click **Add deploy key**
+4. Paste the public key and give it a title
+5. Check "Allow write access" if needed
+
+Configure SSH to use the deploy key:
+
+```bash
+# Add to ~/.ssh/config
+cat >> ~/.ssh/config << 'EOF'
+Host github-myproject
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/deploy_myproject
+    IdentitiesOnly yes
+EOF
+
+# Clone using the custom host alias
+git clone git@github-myproject:username/private-repo.git
+```
+
+### Method 4: Personal Access Token (PAT)
+
+Use tokens for HTTPS-based authentication (useful for scripts and automation).
+
+#### Create a Token
+
+1. Go to [GitHub Token Settings](https://github.com/settings/tokens)
+2. Click **Generate new token (classic)** or **Fine-grained tokens**
+3. Select scopes: `repo` (for full repository access)
+4. Copy the generated token
+
+#### Configure Git to Use Token
+
+```bash
+# Option A: Use credential helper to cache token
+git config --global credential.helper store
+
+# Clone a repo and enter token when prompted for password
+git clone https://github.com/username/private-repo.git
+# Username: your-github-username
+# Password: paste-your-token-here
+
+# Option B: Include token in remote URL (less secure, avoid for shared systems)
+git clone https://YOUR_TOKEN@github.com/username/private-repo.git
+```
+
+> ⚠️ **Security Warning**: Tokens in URLs may appear in logs. Use SSH keys or credential helpers instead for better security.
+
+### Best Practices
+
+1. **Use SSH Keys** - Most secure and convenient for regular development work
+2. **Use Deploy Keys** - For automated systems that need access to specific repositories
+3. **Use Tokens Sparingly** - Only for scripts that require HTTPS; rotate them regularly
+4. **Protect Private Keys** - Never share or commit your private keys (`id_ed25519`, not `.pub`)
+5. **Use Passphrases** - Add a passphrase to SSH keys for extra security
+6. **Use SSH Agent** - Avoid entering passphrases repeatedly
+
+#### SSH Agent Setup
+
+```bash
+# Start SSH agent
+eval "$(ssh-agent -s)"
+
+# Add your key (you'll enter passphrase once per session)
+ssh-add ~/.ssh/id_ed25519
+
+# Verify loaded keys
+ssh-add -l
+```
+
+To automatically start SSH agent, add to your `~/.bashrc`:
+
+```bash
+# Auto-start SSH agent
+if [ -z "$SSH_AUTH_SOCK" ]; then
+    eval "$(ssh-agent -s)" > /dev/null
+    ssh-add ~/.ssh/id_ed25519 2>/dev/null
+fi
+```
+
+### Troubleshooting
+
+#### "Permission denied (publickey)"
+
+```bash
+# Check if SSH agent has your key
+ssh-add -l
+
+# If empty, add your key
+ssh-add ~/.ssh/id_ed25519
+
+# Verify the key is in GitHub
+curl -s https://api.github.com/users/YOUR_USERNAME/keys
+
+# Test with verbose output
+ssh -vT git@github.com
+```
+
+#### "Host key verification failed"
+
+```bash
+# Add GitHub's host key to known hosts
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+```
+
+#### Multiple GitHub Accounts
+
+If you use multiple GitHub accounts, configure SSH with different hosts:
+
+```bash
+# ~/.ssh/config
+Host github-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+    IdentitiesOnly yes
+
+Host github-work
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_work
+    IdentitiesOnly yes
+```
+
+Use the appropriate host when cloning:
+
+```bash
+git clone git@github-personal:personal-account/repo.git
+git clone git@github-work:work-org/repo.git
+```
+
 ## 📁 Workspace Structure
 
 The script creates the following directory structure:
