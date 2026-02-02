@@ -682,7 +682,7 @@ echo ""
 echo "  Android Development:"
 echo "    Java:         $(java --version 2>&1 | head -n1)"
 if command -v gradle &> /dev/null; then
-    echo "    Gradle:       $(gradle --version 2>&1 | grep "Gradle" | cut -d' ' -f2)"
+    echo "    Gradle:       $(gradle --version 2>&1 | grep Gradle | cut -d' ' -f2)"
 fi
 if [ -d "$ANDROID_HOME" ]; then
     echo "    Android SDK:  $ANDROID_HOME"
