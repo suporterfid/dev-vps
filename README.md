@@ -76,6 +76,9 @@ Complete development environment setup script for Ubuntu 24.04 LTS VPS, optimize
 - ✅ **GitHub Copilot CLI** - GitHub's AI CLI extension
 - ✅ **Codex CLI** - OpenAI's code assistant
 
+### Optional Add-ons
+- 🦞 **OpenClaw** - Personal AI assistant via messaging channels (see [OpenClaw Setup](#-openclaw-ai-assistant-optional))
+
 ### Security
 - ✅ **UFW firewall** - Configured with SSH/HTTP/HTTPS
 - ✅ **fail2ban** - Intrusion prevention
@@ -449,6 +452,19 @@ ask-code '<query>'  # Generate code from AI
 gac                 # Git add all + AI commit review
 ```
 
+### OpenClaw (Optional Add-on)
+```bash
+oc          # openclaw
+oc-chat     # openclaw chat
+oc-status   # Gateway service status
+oc-start    # Start Gateway service
+oc-stop     # Stop Gateway service
+oc-restart  # Restart Gateway service
+oc-logs     # View Gateway logs (live)
+oc-config   # Edit configuration
+oc-check    # Quick status overview
+```
+
 ## 🔧 Tmux Configuration
 
 Custom tmux config with developer-friendly settings:
@@ -778,6 +794,190 @@ ask-code '<query>'  # Generate code snippets
 gac                 # Git add all + AI-assisted commit
 ```
 
+## 🦞 OpenClaw AI Assistant (Optional)
+
+OpenClaw is an optional add-on that enables you to interact with AI through messaging platforms (WhatsApp, Telegram, Discord, Slack). It runs as a Gateway service on your VPS.
+
+### Why Use OpenClaw?
+
+- **Message from anywhere**: Chat with your AI assistant via your phone's messaging apps
+- **Persistent sessions**: Your conversations continue even when you disconnect
+- **Multiple channels**: Support for WhatsApp, Telegram, Discord, and Slack
+- **Secure by default**: Loopback binding, pairing mode, and sandbox isolation
+
+### Installation
+
+After running `vps-dev-setup.sh`, install OpenClaw with the optional script:
+
+```bash
+# Download and run OpenClaw setup
+chmod +x openclaw-setup.sh
+./openclaw-setup.sh
+
+# Source bashrc to get aliases
+source ~/.bashrc
+
+# Complete onboarding
+openclaw onboard
+```
+
+> **Note**: OpenClaw requires Node.js v22+. The setup script will upgrade your Node.js if needed (from v20 installed by the main script).
+
+### Quick Start
+
+```bash
+# 1. Set your API key (if not done during onboarding)
+openclaw config set apiKey YOUR_ANTHROPIC_API_KEY
+
+# 2. Start the Gateway service
+oc-start
+
+# 3. Check status
+oc-status
+
+# 4. View logs
+oc-logs
+```
+
+### Gateway Service Management
+
+The Gateway runs as a systemd user service:
+
+```bash
+# Start/stop/restart
+systemctl --user start openclaw-gateway
+systemctl --user stop openclaw-gateway
+systemctl --user restart openclaw-gateway
+
+# Check status
+systemctl --user status openclaw-gateway
+
+# View logs
+journalctl --user -u openclaw-gateway -f
+
+# Or use the aliases:
+oc-start / oc-stop / oc-restart / oc-status / oc-logs
+```
+
+### Configuration
+
+Configuration is stored at `~/.openclaw/openclaw.json`. Edit with:
+
+```bash
+oc-config    # Opens in nano/your editor
+```
+
+Default secure settings:
+- Gateway bound to `127.0.0.1:18789` (localhost only)
+- All messaging channels disabled
+- Pairing mode enabled for all channels
+- Sandbox mode for non-main sessions
+
+### Enabling Messaging Channels
+
+> ⚠️ **Security Warning**: Only enable channels you need. Each channel requires explicit configuration to prevent unauthorized access.
+
+```bash
+# Edit configuration
+oc-config
+
+# Find the channel you want to enable and set "enabled": true
+# Configure allowFrom lists for authorized contacts
+# Restart the gateway
+oc-restart
+```
+
+For detailed channel setup, see [docs/OPENCLAW.md](docs/OPENCLAW.md) or visit:
+- https://docs.openclaw.ai/channels/whatsapp
+- https://docs.openclaw.ai/channels/telegram
+- https://docs.openclaw.ai/channels/discord
+- https://docs.openclaw.ai/channels/slack
+
+### Remote Access
+
+The Gateway binds to localhost only by default. For remote access:
+
+#### Option 1: SSH Tunnel (Recommended)
+```bash
+# From your local machine
+ssh -L 18789:127.0.0.1:18789 user@your-vps-ip
+
+# Gateway is now accessible at localhost:18789 on your machine
+```
+
+#### Option 2: Tailscale
+```bash
+# Install Tailscale on VPS and client device
+# Update openclaw.json to allow Tailscale:
+# "auth": { "allowTailscale": true }
+```
+
+### Directory Structure
+
+```
+~/.openclaw/
+├── openclaw.json       # Main configuration
+├── workspace/          # Agent workspace
+└── backups/            # Configuration backups
+
+~/logs/openclaw/
+├── openclaw.log        # Application logs
+├── gateway.log         # Gateway service logs
+├── gateway-error.log   # Gateway error logs
+└── audit.log           # Security audit trail
+```
+
+### OpenClaw Aliases Reference
+
+```bash
+# Commands
+oc              # openclaw (main CLI)
+oc-chat         # openclaw chat
+oc-code         # openclaw code
+
+# Service management
+oc-start        # Start Gateway
+oc-stop         # Stop Gateway
+oc-restart      # Restart Gateway
+oc-status       # Check Gateway status
+oc-enable       # Enable Gateway on boot
+oc-disable      # Disable Gateway on boot
+
+# Logs
+oc-logs         # Live Gateway logs
+oc-logs-all     # All Gateway logs
+oc-logs-error   # Error logs only
+
+# Configuration
+oc-config       # Edit configuration
+oc-check        # Quick status check
+
+# Navigation
+oc-workspace    # Go to workspace directory
+```
+
+### Uninstalling OpenClaw
+
+```bash
+# Stop and disable the service
+oc-stop
+systemctl --user disable openclaw-gateway
+
+# Remove the npm package
+npm uninstall -g openclaw
+
+# Remove configuration and workspace (optional)
+rm -rf ~/.openclaw
+rm ~/.config/systemd/user/openclaw-gateway.service
+
+# Remove log files (optional)
+rm -rf ~/logs/openclaw
+
+# Remove aliases from .bashrc (manual)
+nano ~/.bashrc
+# Delete the "OpenClaw Configuration" section
+```
+
 ## 🐛 Troubleshooting
 
 ### Docker Permission Denied
@@ -881,6 +1081,85 @@ source ~/.bashrc
 # Or set explicitly
 export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
 export PATH="$JAVA_HOME/bin:$PATH"
+```
+
+### OpenClaw Gateway Won't Start
+**Problem**: `oc-start` fails or Gateway service won't start
+
+**Solution**:
+```bash
+# Check service status for error details
+oc-status
+
+# Check logs for specific errors
+oc-logs-error
+
+# Verify configuration is valid JSON
+openclaw config validate
+
+# Ensure Node.js v22+ is active
+node --version
+# If not v22+, switch:
+nvm use 22
+
+# Restart the service
+systemctl --user daemon-reload
+oc-restart
+```
+
+### OpenClaw Command Not Found
+**Problem**: `openclaw: command not found` after installation
+
+**Solution**:
+```bash
+# Reload NVM and shell
+source ~/.nvm/nvm.sh
+source ~/.bashrc
+
+# Verify Node.js is using correct version
+nvm use 22
+
+# Check if openclaw is in npm global
+npm list -g openclaw
+
+# If not found, reinstall
+npm install -g openclaw@latest
+```
+
+### OpenClaw Gateway Port Already in Use
+**Problem**: Gateway fails with "port 18789 already in use"
+
+**Solution**:
+```bash
+# Find process using the port
+sudo lsof -i :18789
+
+# Kill the process
+sudo kill -9 <PID>
+
+# Or change the port in configuration
+oc-config
+# Change "port": 18789 to another port
+oc-restart
+```
+
+### OpenClaw Sandbox Mode Fails
+**Problem**: Sandbox mode errors or Docker-related failures
+
+**Solution**:
+```bash
+# Verify Docker is running
+docker info
+
+# If Docker permission denied, add user to docker group
+sudo usermod -aG docker $USER
+# Log out and back in
+
+# Check Docker is accessible
+docker run hello-world
+
+# Restart OpenClaw Gateway
+oc-restart
 ```
 
 ## 📊 System Monitoring

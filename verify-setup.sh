@@ -164,6 +164,38 @@ if command -v gh &> /dev/null; then
 fi
 echo ""
 
+# OpenClaw (Optional)
+echo -e "${YELLOW}OpenClaw AI Assistant (Optional):${NC}"
+if command -v openclaw &> /dev/null; then
+    check_command openclaw "OpenClaw CLI" "openclaw --version"
+
+    # Check Gateway service
+    if systemctl --user is-active --quiet openclaw-gateway 2>/dev/null; then
+        echo -e "${GREEN}✓${NC} OpenClaw Gateway ${BLUE}(running)${NC}"
+    elif systemctl --user list-unit-files openclaw-gateway.service &>/dev/null 2>&1; then
+        echo -e "${YELLOW}!${NC} OpenClaw Gateway ${YELLOW}(installed but not running - use: oc-start)${NC}"
+    else
+        echo -e "${YELLOW}!${NC} OpenClaw Gateway ${YELLOW}(service not installed)${NC}"
+    fi
+
+    # Check configuration
+    if [ -f "$HOME/.openclaw/openclaw.json" ]; then
+        echo -e "${GREEN}✓${NC} OpenClaw config ${BLUE}~/.openclaw/openclaw.json${NC}"
+    else
+        echo -e "${YELLOW}!${NC} OpenClaw config ${YELLOW}(not found - run: openclaw onboard)${NC}"
+    fi
+
+    # Check workspace
+    if [ -d "$HOME/.openclaw/workspace" ]; then
+        echo -e "${GREEN}✓${NC} OpenClaw workspace ${BLUE}~/.openclaw/workspace${NC}"
+    else
+        echo -e "${YELLOW}!${NC} OpenClaw workspace ${YELLOW}(not created)${NC}"
+    fi
+else
+    echo -e "${YELLOW}!${NC} OpenClaw ${YELLOW}(not installed - optional, run: ./openclaw-setup.sh)${NC}"
+fi
+echo ""
+
 # Android Development
 echo -e "${YELLOW}Android Development:${NC}"
 check_command java "Java" "java --version 2>&1 | head -n1"
@@ -297,6 +329,7 @@ echo "  tmux new -s test        # Test Tmux"
 echo "  sgpt 'hello'            # Test Shell-GPT"
 echo "  aider --version         # Test Aider"
 echo "  ollama --version        # Test Ollama"
+echo "  oc-check                # Test OpenClaw (if installed)"
 echo ""
 echo -e "${YELLOW}Next Steps:${NC}"
 echo "  1. Configure Git if not done:"
