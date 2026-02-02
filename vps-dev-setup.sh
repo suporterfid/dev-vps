@@ -4,7 +4,6 @@
 # VPS Development Environment Setup Script
 # Target: Ubuntu 24.04 LTS
 # Purpose: Complete development environment for Claude Code + Multi-stack development
-# Author: Alex's Environment Setup
 # Date: February 2026
 ################################################################################
 
@@ -319,7 +318,7 @@ python3 -m pip install --user \
 log_success "Python environment configured with essential tools"
 
 ################################################################################
-# 8. PHP & COMPOSER (for Laravel/Neuron AI)
+# 8. PHP & COMPOSER
 ################################################################################
 
 log_info "Step 8: Installing PHP and Composer..."
@@ -550,7 +549,7 @@ log_success "Basic security configured (UFW + fail2ban)"
 log_info "Step 14: Creating workspace directories..."
 
 # Create standard workspace structure
-mkdir -p ~/projects/{neuron-ai,leadsense,rfid,n8n-workflows,automation,experiments}
+mkdir -p ~/projects/{web,api,mobile,automation,experiments}
 mkdir -p ~/backups
 mkdir -p ~/scripts
 mkdir -p ~/logs
@@ -619,22 +618,21 @@ echo "  5. Start a tmux session:"
 echo "     tmux new -s work"
 echo ""
 echo "  6. Clone your repositories:"
-echo "     cd ~/projects/neuron-ai"
+echo "     cd ~/projects/web"
 echo "     git clone <your-repo-url>"
 echo ""
 echo "============================================================================"
 log_info "Workspace Locations:"
 echo "============================================================================"
 echo ""
-echo "  ~/projects/neuron-ai        - Neuron AI (PHP/Laravel)"
-echo "  ~/projects/leadsense         - LeadSense CRM"
-echo "  ~/projects/rfid              - RFID projects"
-echo "  ~/projects/n8n-workflows     - n8n automation"
-echo "  ~/projects/automation        - Other automation scripts"
-echo "  ~/projects/experiments       - Testing & experiments"
-echo "  ~/backups                    - Local backups"
-echo "  ~/scripts                    - Utility scripts"
-echo "  ~/logs                       - Application logs"
+echo "  ~/projects/web              - Web application projects"
+echo "  ~/projects/api              - API/Backend projects"
+echo "  ~/projects/mobile           - Mobile app projects"
+echo "  ~/projects/automation       - Automation scripts"
+echo "  ~/projects/experiments      - Testing & experiments"
+echo "  ~/backups                   - Local backups"
+echo "  ~/scripts                   - Utility scripts"
+echo "  ~/logs                      - Application logs"
 echo ""
 echo "============================================================================"
 log_info "Useful Commands:"

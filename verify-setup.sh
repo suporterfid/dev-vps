@@ -187,7 +187,7 @@ fi
 
 # Check workspace directories
 echo -e "${YELLOW}Workspace Directories:${NC}"
-for dir in projects projects/neuron-ai projects/leadsense projects/rfid projects/n8n-workflows projects/automation projects/experiments backups scripts logs; do
+for dir in projects projects/web projects/api projects/mobile projects/automation projects/experiments backups scripts logs; do
     if [ -d "$HOME/$dir" ]; then
         echo -e "  ${GREEN}✓${NC} ~/$dir"
     else

@@ -40,7 +40,7 @@ Complete development environment setup script for Ubuntu 24.04 LTS VPS, optimize
 - ✅ **IPython/Jupyter** - Interactive shells
 - ✅ **black/flake8/pylint** - Code quality tools
 
-### PHP (for Laravel/Neuron AI)
+### PHP
 - ✅ **PHP 8.3** - Latest stable
 - ✅ **Composer** - Dependency manager
 - ✅ **Extensions**: MySQL, PostgreSQL, Redis, GD, curl, XML, BCMath, etc.
@@ -125,11 +125,10 @@ The script creates the following directory structure:
 ```
 ~/
 ├── projects/
-│   ├── neuron-ai/          # Neuron AI (PHP/Laravel)
-│   ├── leadsense/          # LeadSense CRM
-│   ├── rfid/               # RFID projects
-│   ├── n8n-workflows/      # n8n automation
-│   ├── automation/         # Other automation
+│   ├── web/                # Web application projects
+│   ├── api/                # API/Backend projects
+│   ├── mobile/             # Mobile app projects
+│   ├── automation/         # Automation scripts
 │   └── experiments/        # Testing & experiments
 ├── backups/                # Local backups
 ├── scripts/                # Utility scripts
@@ -252,7 +251,7 @@ tmux kill-session -t work
 tmux new -s claude-dev
 
 # Start Claude Code
-cd ~/projects/neuron-ai
+cd ~/projects/web
 claude-code
 
 # On iPhone: Detach when needed
@@ -461,5 +460,4 @@ This setup script is provided as-is for development purposes.
 ---
 
 **Last Updated**: February 2026  
-**Target System**: Ubuntu 24.04 LTS  
-**Maintained by**: Alex's Development Environment
+**Target System**: Ubuntu 24.04 LTS
