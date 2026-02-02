@@ -373,7 +373,7 @@ if dir_exists "$NVM_DIR" && file_exists "$NVM_DIR/nvm.sh"; then
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 else
     log_info "Installing NVM..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh 2>&1 | bash | tee -a "$LOG_FILE"
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash 2>&1 | tee -a "$LOG_FILE"
     
     # Load NVM
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -613,7 +613,7 @@ if command_exists claude-code || file_exists "$HOME/.claude/bin/claude-code"; th
     log_skip "Claude Code CLI"
 else
     log_info "Installing Claude Code CLI..."
-    curl -fsSL https://claude.ai/cli/install.sh 2>&1 | sh | tee -a "$LOG_FILE"
+    curl -fsSL https://claude.ai/cli/install.sh | sh 2>&1 | tee -a "$LOG_FILE"
     log_success "Claude Code CLI installed"
 fi
 
@@ -650,7 +650,7 @@ if command_exists ollama; then
     log_skip "Ollama"
 else
     log_info "Installing Ollama..."
-    curl -fsSL https://ollama.com/install.sh 2>&1 | sh | tee -a "$LOG_FILE"
+    curl -fsSL https://ollama.com/install.sh | sh 2>&1 | tee -a "$LOG_FILE"
 fi
 
 # Install GitHub Copilot CLI extension
