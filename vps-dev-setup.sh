@@ -462,8 +462,8 @@ fi
 
 log_step "Step 7: Setting up Python environment..."
 
-# Check if Python packages are already installed
-PYTHON_APT_PACKAGES=(python3 python3-pip python3-venv python3-dev python-is-python3)
+# Check if Python packages are already installed (including pipx for PEP 668 compliance)
+PYTHON_APT_PACKAGES=(python3 python3-pip python3-venv python3-dev python-is-python3 pipx)
 PYTHON_MISSING=()
 
 for pkg in "${PYTHON_APT_PACKAGES[@]}"; do
@@ -479,25 +479,28 @@ else
     sudo apt install -y "${PYTHON_APT_PACKAGES[@]}" 2>&1 | tee -a "$LOG_FILE"
 fi
 
-# Upgrade pip
-log_info "Upgrading pip..."
-python3 -m pip install --user --upgrade pip 2>&1 | tee -a "$LOG_FILE" || true
+# Ensure pipx path is set up
+if command_exists pipx; then
+    pipx ensurepath 2>&1 | tee -a "$LOG_FILE" || true
+fi
 
-# Check if Python dev tools are installed
-PYTHON_PIP_PACKAGES=(pipenv poetry virtualenv ipython jupyter black flake8 pylint mypy pytest requests python-dotenv)
-PYTHON_PIP_MISSING=()
+# Install Python CLI tools using pipx (PEP 668 compliant for Ubuntu 24.04)
+PIPX_PACKAGES=(pipenv poetry black flake8 pylint mypy pytest ipython jupyter)
+PIPX_MISSING=()
 
-for pkg in "${PYTHON_PIP_PACKAGES[@]}"; do
-    if ! python3 -m pip show "$pkg" &> /dev/null; then
-        PYTHON_PIP_MISSING+=("$pkg")
+for pkg in "${PIPX_PACKAGES[@]}"; do
+    if ! pipx list 2>/dev/null | grep -q "package $pkg"; then
+        PIPX_MISSING+=("$pkg")
     fi
 done
 
-if [ ${#PYTHON_PIP_MISSING[@]} -eq 0 ]; then
-    log_skip "Python pip packages"
+if [ ${#PIPX_MISSING[@]} -eq 0 ]; then
+    log_skip "Python pipx packages"
 else
-    log_info "Installing ${#PYTHON_PIP_MISSING[@]} Python packages..."
-    python3 -m pip install --user "${PYTHON_PIP_MISSING[@]}" 2>&1 | tee -a "$LOG_FILE"
+    log_info "Installing ${#PIPX_MISSING[@]} Python packages via pipx..."
+    for pkg in "${PIPX_MISSING[@]}"; do
+        pipx install "$pkg" 2>&1 | tee -a "$LOG_FILE" || log_warning "Failed to install $pkg via pipx"
+    done
 fi
 
 log_success "Python environment configured with essential tools"
@@ -579,11 +582,12 @@ else
         curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg 2>&1 | tee -a "$LOG_FILE"
     fi
 
-    # Get Ubuntu codename and check if MongoDB supports it, fallback to jammy if not
+    # Get Ubuntu codename and check if MongoDB supports it
     UBUNTU_CODENAME=$(lsb_release -cs)
-    # MongoDB 7.0 supports: focal (20.04), jammy (22.04), noble (24.04)
+    # MongoDB 7.0 officially supports: focal (20.04), jammy (22.04)
+    # Noble (24.04) is NOT yet officially supported, so fallback to jammy
     case "$UBUNTU_CODENAME" in
-        focal|jammy|noble)
+        focal|jammy)
             MONGODB_CODENAME="$UBUNTU_CODENAME"
             ;;
         *)
@@ -592,12 +596,20 @@ else
             ;;
     esac
 
+    # Remove old broken MongoDB repository if it exists with wrong codename
+    if file_exists /etc/apt/sources.list.d/mongodb-org-7.0.list; then
+        if grep -q "noble" /etc/apt/sources.list.d/mongodb-org-7.0.list 2>/dev/null; then
+            log_info "Removing broken MongoDB repository with unsupported codename..."
+            sudo rm -f /etc/apt/sources.list.d/mongodb-org-7.0.list
+        fi
+    fi
+
     if ! file_exists /etc/apt/sources.list.d/mongodb-org-7.0.list; then
         echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu ${MONGODB_CODENAME}/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list > /dev/null
-        sudo apt update 2>&1 | tee -a "$LOG_FILE"
+        sudo apt update 2>&1 | tee -a "$LOG_FILE" || log_warning "MongoDB repository update failed"
     fi
-    
-    sudo apt install -y mongodb-mongosh 2>&1 | tee -a "$LOG_FILE"
+
+    sudo apt install -y mongodb-mongosh 2>&1 | tee -a "$LOG_FILE" || log_warning "MongoDB Shell installation failed, may need manual installation"
 fi
 
 log_success "Database clients installed"
@@ -629,20 +641,20 @@ fi
 
 log_step "Step 11: Installing AI CLI Tools..."
 
-# Install Shell-GPT (sgpt) - Simple CLI assistant
-if python3 -m pip show shell-gpt &> /dev/null; then
+# Install Shell-GPT (sgpt) - Simple CLI assistant (using pipx for PEP 668 compliance)
+if pipx list 2>/dev/null | grep -q "package shell-gpt" || command_exists sgpt; then
     log_skip "Shell-GPT"
 else
     log_info "Installing Shell-GPT..."
-    python3 -m pip install --user shell-gpt 2>&1 | tee -a "$LOG_FILE"
+    pipx install shell-gpt 2>&1 | tee -a "$LOG_FILE" || log_warning "Shell-GPT installation failed"
 fi
 
-# Install Aider - AI pair programming
-if python3 -m pip show aider-chat &> /dev/null; then
+# Install Aider - AI pair programming (using pipx for PEP 668 compliance)
+if pipx list 2>/dev/null | grep -q "package aider-chat" || command_exists aider; then
     log_skip "Aider"
 else
     log_info "Installing Aider..."
-    python3 -m pip install --user aider-chat 2>&1 | tee -a "$LOG_FILE"
+    pipx install aider-chat 2>&1 | tee -a "$LOG_FILE" || log_warning "Aider installation failed"
 fi
 
 # Install Ollama - Local LLM runtime
@@ -681,20 +693,16 @@ else
     npm install -g @google/gemini-cli 2>&1 | tee -a "$LOG_FILE" || log_warning "Gemini CLI not available in npm, install manually: https://github.com/google-gemini/gemini-cli"
 fi
 
-# Install OpenCode (if available)
-if npm list -g @anthropic-ai/opencode &> /dev/null || npm list -g opencode-ai &> /dev/null; then
-    log_skip "OpenCode"
-else
-    log_info "Installing OpenCode..."
-    npm install -g @anthropic-ai/opencode 2>&1 | tee -a "$LOG_FILE" || npm install -g opencode-ai 2>&1 | tee -a "$LOG_FILE" || log_warning "OpenCode package not found, skipping"
-fi
+# Note: OpenCode (@anthropic-ai/opencode) is not yet available in npm
+# Skipping - users can install manually when available
+# log_info "OpenCode: Not yet available in npm, skipping"
 
-# Install Qodo Command (AI Agent Framework)
-if npm list -g qodo &> /dev/null || python3 -m pip show qodo-gen &> /dev/null; then
+# Note: Qodo (qodo-gen) can be installed via pipx if needed
+if pipx list 2>/dev/null | grep -q "package qodo-gen" || command_exists qodo; then
     log_skip "Qodo"
 else
     log_info "Installing Qodo..."
-    npm install -g qodo 2>&1 | tee -a "$LOG_FILE" || python3 -m pip install --user qodo-gen 2>&1 | tee -a "$LOG_FILE" || log_warning "Qodo not found in package managers"
+    pipx install qodo-gen 2>&1 | tee -a "$LOG_FILE" || log_warning "Qodo installation failed, may need manual installation"
 fi
 
 # Add Python user bin to PATH if not already there
@@ -878,12 +886,12 @@ else
     sudo ln -sf /usr/bin/batcat /usr/local/bin/bat 2>/dev/null || true
 fi
 
-# Install exa (better ls)
-if package_installed exa; then
-    log_skip "exa"
+# Install eza (better ls, replaces exa in Ubuntu 24.04)
+if package_installed eza; then
+    log_skip "eza"
 else
-    log_info "Installing exa..."
-    sudo apt install -y exa 2>&1 | tee -a "$LOG_FILE"
+    log_info "Installing eza (modern ls replacement)..."
+    sudo apt install -y eza 2>&1 | tee -a "$LOG_FILE" || log_warning "eza installation failed"
 fi
 
 log_success "Additional development tools installed"
@@ -912,12 +920,12 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
-# Listing (using exa if available, fallback to ls)
-if command -v exa &> /dev/null; then
-    alias ls='exa --icons'
-    alias ll='exa -lah --icons --git'
-    alias la='exa -a --icons'
-    alias lt='exa --tree --level=2 --icons'
+# Listing (using eza if available, fallback to ls)
+if command -v eza &> /dev/null; then
+    alias ls='eza --icons'
+    alias ll='eza -lah --icons --git'
+    alias la='eza -a --icons'
+    alias lt='eza --tree --level=2 --icons'
 else
     alias ll='ls -alh'
     alias la='ls -A'
@@ -1064,7 +1072,7 @@ DIRS_CREATED=0
 for dir in "${WORKSPACE_DIRS[@]}"; do
     if ! dir_exists "$dir"; then
         mkdir -p "$dir" 2>&1 | tee -a "$LOG_FILE"
-        ((DIRS_CREATED++))
+        DIRS_CREATED=$((DIRS_CREATED + 1))
     fi
 done
 
