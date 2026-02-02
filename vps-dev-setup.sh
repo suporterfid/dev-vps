@@ -363,6 +363,29 @@ sudo apt install -y redis-tools
 # SQLite
 sudo apt install -y sqlite3
 
+# MongoDB Shell (mongosh)
+log_info "Installing MongoDB Shell (mongosh)..."
+
+# Add MongoDB GPG key (convert to binary format for modern apt)
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+
+# Get Ubuntu codename and check if MongoDB supports it, fallback to jammy if not
+UBUNTU_CODENAME=$(lsb_release -cs)
+# MongoDB 7.0 supports: focal (20.04), jammy (22.04), noble (24.04)
+case "$UBUNTU_CODENAME" in
+    focal|jammy|noble)
+        MONGODB_CODENAME="$UBUNTU_CODENAME"
+        ;;
+    *)
+        log_warning "Ubuntu $UBUNTU_CODENAME not officially supported by MongoDB 7.0, using jammy repository"
+        MONGODB_CODENAME="jammy"
+        ;;
+esac
+
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu ${MONGODB_CODENAME}/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list > /dev/null
+sudo apt update
+sudo apt install -y mongodb-mongosh
+
 log_success "Database clients installed"
 
 ################################################################################

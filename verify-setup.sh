@@ -135,6 +135,7 @@ check_command mysql "MySQL Client" "mysql --version"
 check_command psql "PostgreSQL Client" "psql --version"
 check_command redis-cli "Redis CLI" "redis-cli --version"
 check_command sqlite3 "SQLite" "sqlite3 --version"
+check_command mongosh "MongoDB Shell" "mongosh --version"
 echo ""
 
 # Developer Tools
