@@ -1080,7 +1080,49 @@ else
 fi
 
 ################################################################################
-# 17. SYSTEM INFO & FINAL STEPS
+# 17. TAILSCALE VPN
+################################################################################
+
+log_step "Step 17: Installing Tailscale VPN..."
+
+# Check if Tailscale is already installed
+if command_exists tailscale; then
+    log_skip "Tailscale"
+    # Check if Tailscale is running
+    if ! service_running tailscaled; then
+        log_info "Starting Tailscale service..."
+        sudo systemctl enable tailscaled 2>&1 | tee -a "$LOG_FILE"
+        sudo systemctl start tailscaled 2>&1 | tee -a "$LOG_FILE"
+    fi
+else
+    log_info "Installing Tailscale..."
+
+    # Install Tailscale using official install script
+    curl -fsSL https://tailscale.com/install.sh | sh 2>&1 | tee -a "$LOG_FILE"
+
+    # Enable and start Tailscale service
+    sudo systemctl enable tailscaled 2>&1 | tee -a "$LOG_FILE"
+    sudo systemctl start tailscaled 2>&1 | tee -a "$LOG_FILE"
+
+    log_success "Tailscale installed"
+fi
+
+# Check Tailscale status
+if command_exists tailscale; then
+    TAILSCALE_STATUS=$(tailscale status 2>&1 || true)
+    if echo "$TAILSCALE_STATUS" | grep -q "Logged out"; then
+        log_warning "Tailscale is installed but not authenticated"
+        log_info "Run 'sudo tailscale up' to authenticate and connect to your tailnet"
+    elif echo "$TAILSCALE_STATUS" | grep -q "stopped"; then
+        log_warning "Tailscale service is not running"
+        log_info "Run 'sudo systemctl start tailscaled && sudo tailscale up' to start"
+    fi
+fi
+
+log_success "Tailscale VPN configured"
+
+################################################################################
+# 18. SYSTEM INFO & FINAL STEPS
 ################################################################################
 
 echo ""
@@ -1145,6 +1187,11 @@ if command -v ollama &> /dev/null; then
     echo "    Ollama:       $(ollama --version 2>/dev/null || echo 'installed')"
 fi
 echo ""
+echo "  VPN:"
+if command -v tailscale &> /dev/null; then
+    echo "    Tailscale:    $(tailscale version 2>/dev/null | head -n1 || echo 'installed')"
+fi
+echo ""
 
 echo "============================================================================"
 log_warning "IMPORTANT: Next Steps"
@@ -1164,19 +1211,23 @@ echo ""
 echo "  4. Authenticate Claude Code:"
 echo "     claude auth"
 echo ""
-echo "  5. Configure AI API keys (optional):"
+echo "  5. Connect to Tailscale VPN:"
+echo "     sudo tailscale up"
+echo "     # Follow the authentication URL to connect to your tailnet"
+echo ""
+echo "  6. Configure AI API keys (optional):"
 echo "     export OPENAI_API_KEY='your-openai-key'       # For Shell-GPT, Aider with GPT"
 echo "     export ANTHROPIC_API_KEY='your-anthropic-key' # For Aider with Claude"
 echo "     # Add these to ~/.bashrc for persistence"
 echo ""
-echo "  6. Download a local model for Ollama (optional):"
+echo "  7. Download a local model for Ollama (optional):"
 echo "     ollama pull deepseek-coder    # For coding tasks"
 echo "     ollama pull llama3            # General purpose"
 echo ""
-echo "  7. Start a tmux session:"
+echo "  8. Start a tmux session:"
 echo "     tmux new -s work"
 echo ""
-echo "  8. Clone your repositories:"
+echo "  9. Clone your repositories:"
 echo "     cd ~/projects/web"
 echo "     git clone <your-repo-url>"
 echo ""
@@ -1217,6 +1268,12 @@ echo ""
 echo "  Git:"
 echo "    lazygit                   - Beautiful Git UI"
 echo "    gh                        - GitHub CLI"
+echo ""
+echo "  Tailscale:"
+echo "    sudo tailscale up         - Connect to tailnet"
+echo "    tailscale status          - Show connection status"
+echo "    tailscale ip              - Show Tailscale IP"
+echo "    tailscale ping <host>     - Ping another device"
 echo ""
 echo "  AI Tools:"
 echo "    cc                        - Claude Code"
