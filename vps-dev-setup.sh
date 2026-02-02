@@ -404,10 +404,94 @@ fi
 log_success "Claude Code CLI installed"
 
 ################################################################################
-# 11. ADDITIONAL DEVELOPMENT TOOLS
+# 11. ANDROID DEVELOPMENT ENVIRONMENT
 ################################################################################
 
-log_info "Step 11: Installing additional development tools..."
+log_info "Step 11: Installing Android development environment..."
+
+# Install OpenJDK 17 (required for Android development)
+sudo apt install -y openjdk-17-jdk openjdk-17-jre
+
+# Set JAVA_HOME
+JAVA_HOME_PATH="/usr/lib/jvm/java-17-openjdk-amd64"
+if ! grep -q 'JAVA_HOME' ~/.bashrc; then
+    cat >> ~/.bashrc << EOF
+
+# Java Configuration
+export JAVA_HOME="${JAVA_HOME_PATH}"
+export PATH="\$JAVA_HOME/bin:\$PATH"
+EOF
+fi
+export JAVA_HOME="${JAVA_HOME_PATH}"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Create Android SDK directory
+ANDROID_HOME="$HOME/Android/Sdk"
+mkdir -p "$ANDROID_HOME/cmdline-tools"
+
+# Download Android command-line tools
+log_info "Downloading Android command-line tools..."
+CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+CMDLINE_TOOLS_ZIP="/tmp/commandlinetools.zip"
+curl -Lo "$CMDLINE_TOOLS_ZIP" "$CMDLINE_TOOLS_URL"
+
+# Extract to the correct location
+unzip -q "$CMDLINE_TOOLS_ZIP" -d "/tmp/cmdline-tools-temp"
+mv /tmp/cmdline-tools-temp/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+rm -rf /tmp/cmdline-tools-temp "$CMDLINE_TOOLS_ZIP"
+
+# Add Android SDK to PATH
+if ! grep -q 'ANDROID_HOME' ~/.bashrc; then
+    cat >> ~/.bashrc << EOF
+
+# Android SDK Configuration
+export ANDROID_HOME="\$HOME/Android/Sdk"
+export ANDROID_SDK_ROOT="\$ANDROID_HOME"
+export PATH="\$ANDROID_HOME/cmdline-tools/latest/bin:\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/build-tools/35.0.0:\$PATH"
+EOF
+fi
+
+# Export for current session
+export ANDROID_HOME="$HOME/Android/Sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+# Accept licenses
+log_info "Accepting Android SDK licenses..."
+yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+
+# Install essential SDK packages
+log_info "Installing Android SDK packages (this may take a while)..."
+"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+    "platform-tools" \
+    "build-tools;35.0.0" \
+    "platforms;android-35" \
+    "platforms;android-34" \
+    "emulator" \
+    "extras;android;m2repository" \
+    "extras;google;m2repository"
+
+# Install Gradle
+log_info "Installing Gradle..."
+GRADLE_VERSION="8.12"
+GRADLE_ZIP="/tmp/gradle.zip"
+curl -Lo "$GRADLE_ZIP" "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+sudo unzip -q "$GRADLE_ZIP" -d /opt
+sudo ln -sf "/opt/gradle-${GRADLE_VERSION}/bin/gradle" /usr/local/bin/gradle
+rm "$GRADLE_ZIP"
+
+log_success "Android development environment installed"
+log_info "  - OpenJDK 17"
+log_info "  - Android SDK (platforms 34, 35)"
+log_info "  - Android Build Tools 35.0.0"
+log_info "  - Android Platform Tools"
+log_info "  - Gradle ${GRADLE_VERSION}"
+
+################################################################################
+# 12. ADDITIONAL DEVELOPMENT TOOLS
+################################################################################
+
+log_info "Step 12: Installing additional development tools..."
 
 # Install GitHub CLI
 (type -p wget >/dev/null || (sudo apt update && sudo apt install -y wget)) \
@@ -442,10 +526,10 @@ sudo apt install -y exa
 log_success "Additional development tools installed"
 
 ################################################################################
-# 12. BASH ALIASES & ENVIRONMENT
+# 13. BASH ALIASES & ENVIRONMENT
 ################################################################################
 
-log_info "Step 12: Setting up bash aliases and environment..."
+log_info "Step 13: Setting up bash aliases and environment..."
 
 # Add useful aliases to .bashrc
 cat >> ~/.bashrc << 'EOF'
@@ -523,10 +607,10 @@ EOF
 log_success "Bash aliases and environment configured"
 
 ################################################################################
-# 13. SECURITY SETUP
+# 14. SECURITY SETUP
 ################################################################################
 
-log_info "Step 13: Configuring basic security..."
+log_info "Step 14: Configuring basic security..."
 
 # Configure UFW firewall
 sudo ufw default deny incoming
@@ -543,10 +627,10 @@ sudo systemctl start fail2ban
 log_success "Basic security configured (UFW + fail2ban)"
 
 ################################################################################
-# 14. WORKSPACE SETUP
+# 15. WORKSPACE SETUP
 ################################################################################
 
-log_info "Step 14: Creating workspace directories..."
+log_info "Step 15: Creating workspace directories..."
 
 # Create standard workspace structure
 mkdir -p ~/projects/{web,api,mobile,automation,experiments}
@@ -557,7 +641,7 @@ mkdir -p ~/logs
 log_success "Workspace directories created"
 
 ################################################################################
-# 15. SYSTEM INFO & FINAL STEPS
+# 16. SYSTEM INFO & FINAL STEPS
 ################################################################################
 
 echo ""
@@ -594,6 +678,17 @@ fi
 
 echo "    Python:       $(python3 --version | cut -d' ' -f2)"
 echo "    PHP:          $(php --version | head -n1 | cut -d' ' -f2)"
+echo ""
+echo "  Android Development:"
+echo "    Java:         $(java --version 2>&1 | head -n1)"
+if command -v gradle &> /dev/null; then
+    echo "    Gradle:       $(gradle --version 2>&1 | grep Gradle | cut -d' ' -f2)"
+fi
+if [ -d "$ANDROID_HOME" ]; then
+    echo "    Android SDK:  $ANDROID_HOME"
+    echo "    Build Tools:  35.0.0"
+    echo "    Platforms:    android-34, android-35"
+fi
 echo ""
 
 echo "============================================================================"

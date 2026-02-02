@@ -149,6 +149,29 @@ check_command bat "bat (cat)" "bat --version"
 check_command exa "exa (ls)" "exa --version"
 echo ""
 
+# Android Development
+echo -e "${YELLOW}Android Development:${NC}"
+check_command java "Java" "java --version 2>&1 | head -n1"
+check_command gradle "Gradle" "gradle --version 2>&1 | grep Gradle"
+ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
+if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
+    echo -e "${GREEN}✓${NC} Android SDK ${BLUE}$ANDROID_HOME${NC}"
+    if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+        echo "  Installed SDK packages:"
+        "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null | grep -E "(build-tools|platforms|platform-tools)" | while read -r line; do
+            echo "    - $line"
+        done
+    fi
+else
+    echo -e "${RED}✗${NC} Android SDK ${YELLOW}(not found)${NC}"
+fi
+if [ -x "$ANDROID_HOME/platform-tools/adb" ]; then
+    echo -e "${GREEN}✓${NC} ADB ${BLUE}$($ANDROID_HOME/platform-tools/adb --version | head -n1)${NC}"
+else
+    echo -e "${RED}✗${NC} ADB ${YELLOW}(not found)${NC}"
+fi
+echo ""
+
 # Security
 echo -e "${YELLOW}Security:${NC}"
 check_command ufw "UFW Firewall" "ufw --version"

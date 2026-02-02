@@ -45,6 +45,14 @@ Complete development environment setup script for Ubuntu 24.04 LTS VPS, optimize
 - ✅ **Composer** - Dependency manager
 - ✅ **Extensions**: MySQL, PostgreSQL, Redis, GD, curl, XML, BCMath, etc.
 
+### Android Development
+- ✅ **OpenJDK 17** - Java Development Kit (required for Android)
+- ✅ **Android SDK** - Command-line tools for building Android apps
+- ✅ **Android Build Tools** 35.0.0 - Latest build tools
+- ✅ **Android Platform Tools** - ADB and fastboot
+- ✅ **Android Platforms** - SDK platforms 34 & 35
+- ✅ **Gradle 8.12** - Build automation tool
+
 ### Database Clients
 - ✅ **MySQL client**
 - ✅ **PostgreSQL client**
@@ -262,6 +270,140 @@ ssh user@vps-ip
 tmux attach -t claude-dev
 ```
 
+## 🤖 Android Development
+
+This setup includes a complete Android development environment for building Android apps via command line over SSH.
+
+### Environment Variables
+
+The following environment variables are configured:
+```bash
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ANDROID_HOME=$HOME/Android/Sdk
+ANDROID_SDK_ROOT=$HOME/Android/Sdk
+```
+
+### Building an Android App
+
+```bash
+# Navigate to your Android project
+cd ~/projects/mobile/my-android-app
+
+# Build debug APK
+./gradlew assembleDebug
+
+# Build release APK
+./gradlew assembleRelease
+
+# Build and install on connected device (via ADB over network)
+./gradlew installDebug
+
+# Run all tests
+./gradlew test
+
+# Clean and rebuild
+./gradlew clean build
+```
+
+### Managing Android SDK
+
+```bash
+# List installed packages
+sdkmanager --list_installed
+
+# List available packages
+sdkmanager --list
+
+# Install additional SDK platforms
+sdkmanager "platforms;android-33"
+sdkmanager "build-tools;34.0.0"
+
+# Update all installed packages
+sdkmanager --update
+
+# Accept licenses
+sdkmanager --licenses
+```
+
+### ADB Commands
+
+```bash
+# List connected devices
+adb devices
+
+# Connect to device over network (useful for remote development)
+adb connect <device-ip>:5555
+
+# Install APK
+adb install app-debug.apk
+
+# Uninstall app
+adb uninstall com.example.myapp
+
+# View logs
+adb logcat
+
+# Copy files from/to device
+adb push local-file.txt /sdcard/
+adb pull /sdcard/file.txt ./
+```
+
+### Creating a New Android Project
+
+```bash
+# Using Gradle init (basic)
+mkdir my-android-app && cd my-android-app
+gradle init --type basic
+
+# For a complete Android project, clone a template or use Android Studio
+# on your local machine, then push to git and clone on VPS
+```
+
+### React Native / Expo (Android)
+
+```bash
+# Build React Native Android app
+cd my-react-native-app
+npx react-native build-android --mode=release
+
+# Expo projects
+npx expo prebuild --platform android
+cd android && ./gradlew assembleRelease
+```
+
+### Flutter (Android)
+
+```bash
+# Install Flutter (if needed)
+git clone https://github.com/flutter/flutter.git ~/flutter
+export PATH="$PATH:$HOME/flutter/bin"
+flutter doctor
+
+# Build Flutter Android app
+cd my-flutter-app
+flutter build apk --release
+flutter build appbundle --release
+```
+
+### Useful Gradle Options
+
+```bash
+# Build with increased memory
+./gradlew assembleDebug -Dorg.gradle.jvmargs="-Xmx4g"
+
+# Parallel builds
+./gradlew assembleDebug --parallel
+
+# Offline mode (faster if dependencies cached)
+./gradlew assembleDebug --offline
+
+# Skip tests
+./gradlew assembleDebug -x test
+
+# Verbose output
+./gradlew assembleDebug --info
+```
+
 ## 🔒 Security Notes
 
 ### Firewall Configuration
@@ -357,6 +499,56 @@ sudo apt autoclean
 
 # Clean old logs
 sudo journalctl --vacuum-time=7d
+```
+
+### Android SDK Commands Not Found
+**Problem**: `sdkmanager: command not found` or similar
+
+**Solution**:
+```bash
+# Reload shell configuration
+source ~/.bashrc
+
+# Or manually add to path
+export ANDROID_HOME="$HOME/Android/Sdk"
+export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+```
+
+### Gradle Build Failed - Memory Issues
+**Problem**: Build fails with `OutOfMemoryError` or `GC overhead limit exceeded`
+
+**Solution**:
+```bash
+# Increase Gradle daemon memory
+echo "org.gradle.jvmargs=-Xmx4g -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
+
+# Or pass directly to build
+./gradlew assembleDebug -Dorg.gradle.jvmargs="-Xmx4g"
+
+# For very limited memory VPS, disable daemon
+./gradlew assembleDebug --no-daemon
+```
+
+### Android SDK License Not Accepted
+**Problem**: Build fails with license agreement errors
+
+**Solution**:
+```bash
+# Accept all licenses
+yes | sdkmanager --licenses
+```
+
+### JAVA_HOME Not Set
+**Problem**: Gradle/Android build fails with Java not found
+
+**Solution**:
+```bash
+# Reload shell or set manually
+source ~/.bashrc
+
+# Or set explicitly
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
 ## 📊 System Monitoring
