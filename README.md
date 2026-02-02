@@ -69,6 +69,13 @@ Complete development environment setup script for Ubuntu 24.04 LTS VPS, optimize
 - ✅ **bat** - Cat with syntax highlighting
 - ✅ **exa** - Modern ls replacement
 
+### AI CLI Tools
+- ✅ **Shell-GPT (sgpt)** - Simple CLI assistant for quick commands
+- ✅ **Aider** - AI pair programming tool
+- ✅ **Ollama** - Local LLM runtime for offline AI
+- ✅ **GitHub Copilot CLI** - GitHub's AI CLI extension
+- ✅ **Codex CLI** - OpenAI's code assistant
+
 ### Security
 - ✅ **UFW firewall** - Configured with SSH/HTTP/HTTPS
 - ✅ **fail2ban** - Intrusion prevention
@@ -202,6 +209,22 @@ usage   # disk usage (du -h -d1)
 ### Claude Code
 ```bash
 cc      # claude-code
+```
+
+### AI Tools
+```bash
+ai      # aider
+aic     # aider --model sonnet
+aig     # aider --model gpt-4o
+ask     # sgpt (Shell-GPT)
+ollama-code  # ollama run deepseek-coder
+```
+
+### AI Helper Functions
+```bash
+ask-cmd '<query>'   # Get shell commands from AI
+ask-code '<query>'  # Generate code from AI
+gac                 # Git add all + AI commit review
 ```
 
 ## 🔧 Tmux Configuration
@@ -444,6 +467,93 @@ sudo systemctl restart sshd
 # 3. Set up automatic security updates
 sudo apt install unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades
+```
+
+## 🤖 AI Tools Workflow
+
+This environment includes multiple AI CLI tools for different development scenarios.
+
+### Initial Setup
+
+Configure API keys for AI services:
+```bash
+# Add to ~/.bashrc for persistence
+export OPENAI_API_KEY='your-openai-key'       # For Shell-GPT, Aider with GPT
+export ANTHROPIC_API_KEY='your-anthropic-key' # For Aider with Claude
+
+# Download local models for Ollama (optional, for offline use)
+ollama pull deepseek-coder    # Best for coding tasks
+ollama pull llama3            # General purpose
+ollama pull codellama         # Code completion
+```
+
+### Recommended Workflow
+
+#### For Daily Development:
+```bash
+# 1. Start a tmux session
+tmux new -s dev
+
+# 2. Use Claude Code for large tasks
+claude-code
+
+# 3. Use Aider for quick refactoring
+aider app.py tests.py
+
+# 4. Use Ollama for offline queries
+ollama run deepseek-coder "explain this pattern"
+
+# 5. Use Shell-GPT for quick commands
+sgpt "find all TODO comments"
+```
+
+#### For Specific Tasks:
+
+**Refactoring:**
+```bash
+aider --model sonnet app/
+```
+
+**Test Generation:**
+```bash
+aider tests/ --message "add tests for UserController"
+```
+
+**Bug Fixing:**
+```bash
+claude-code  # For deep context understanding
+```
+
+**Quick Commands:**
+```bash
+sgpt --code "bash script to backup database"
+```
+
+### Tool Comparison
+
+| Tool | Best For | Requires API Key | Offline Support |
+|------|----------|------------------|-----------------|
+| Claude Code | Complex tasks, deep context | Anthropic | No |
+| Aider | Pair programming, refactoring | OpenAI/Anthropic | No |
+| Shell-GPT | Quick queries, commands | OpenAI | No |
+| Ollama | Offline work, local models | None | Yes |
+| GitHub Copilot | GitHub integration | GitHub | No |
+
+### AI Aliases Quick Reference
+
+```bash
+# AI Tools
+cc              # Claude Code
+ai / aider      # Aider
+aic             # Aider with Claude Sonnet
+aig             # Aider with GPT-4o
+ask / sgpt      # Shell-GPT
+ollama-code     # Ollama with deepseek-coder
+
+# Helper Functions
+ask-cmd '<query>'   # Get shell command suggestions
+ask-code '<query>'  # Generate code snippets
+gac                 # Git add all + AI-assisted commit
 ```
 
 ## 🐛 Troubleshooting

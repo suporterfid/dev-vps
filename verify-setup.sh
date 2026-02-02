@@ -149,6 +149,21 @@ check_command bat "bat (cat)" "bat --version"
 check_command exa "exa (ls)" "exa --version"
 echo ""
 
+# AI CLI Tools
+echo -e "${YELLOW}AI CLI Tools:${NC}"
+check_command sgpt "Shell-GPT" "sgpt --version"
+check_command aider "Aider" "aider --version"
+check_command ollama "Ollama" "ollama --version"
+# Check GitHub Copilot CLI extension
+if command -v gh &> /dev/null; then
+    if gh extension list 2>/dev/null | grep -q "copilot"; then
+        echo -e "${GREEN}✓${NC} GitHub Copilot CLI ${BLUE}(gh extension)${NC}"
+    else
+        echo -e "${YELLOW}!${NC} GitHub Copilot CLI ${YELLOW}(not installed - run: gh extension install github/gh-copilot)${NC}"
+    fi
+fi
+echo ""
+
 # Android Development
 echo -e "${YELLOW}Android Development:${NC}"
 check_command java "Java" "java --version 2>&1 | head -n1"
@@ -279,6 +294,9 @@ echo "  node --version          # Test Node.js"
 echo "  docker run hello-world  # Test Docker"
 echo "  claude-code --help      # Test Claude Code"
 echo "  tmux new -s test        # Test Tmux"
+echo "  sgpt 'hello'            # Test Shell-GPT"
+echo "  aider --version         # Test Aider"
+echo "  ollama --version        # Test Ollama"
 echo ""
 echo -e "${YELLOW}Next Steps:${NC}"
 echo "  1. Configure Git if not done:"
@@ -291,7 +309,15 @@ echo ""
 echo "  3. Authenticate Claude Code:"
 echo "     claude-code auth"
 echo ""
-echo "  4. Start working:"
+echo "  4. Configure AI API keys (optional):"
+echo "     export OPENAI_API_KEY='your-key'      # For Shell-GPT, Aider"
+echo "     export ANTHROPIC_API_KEY='your-key'  # For Aider with Claude"
+echo ""
+echo "  5. Download Ollama models (optional):"
+echo "     ollama pull deepseek-coder           # For coding"
+echo "     ollama pull llama3                   # General purpose"
+echo ""
+echo "  6. Start working:"
 echo "     tmux new -s work"
 echo "     cd ~/projects"
 echo ""
