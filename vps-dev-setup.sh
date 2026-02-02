@@ -621,7 +621,7 @@ log_success "Database clients installed"
 log_step "Step 10: Installing Claude Code CLI..."
 
 # Check if Claude Code is already installed
-if command_exists claude-code || file_exists "$HOME/.claude/bin/claude-code"; then
+if command_exists claude || file_exists "$HOME/.claude/bin/claude"; then
     log_skip "Claude Code CLI"
 else
     log_info "Installing Claude Code CLI..."
@@ -970,7 +970,7 @@ alias tl='tmux list-sessions'
 alias tn='tmux new -s'
 
 # Claude Code shortcut
-alias cc='claude-code'
+alias cc='claude'
 
 # AI Tools Aliases
 alias ai='aider'
@@ -1165,7 +1165,7 @@ echo "     cat ~/.ssh/id_ed25519.pub"
 echo "     # Add the key to GitHub: https://github.com/settings/keys"
 echo ""
 echo "  4. Authenticate Claude Code:"
-echo "     claude-code auth"
+echo "     claude auth"
 echo ""
 echo "  5. Configure AI API keys (optional):"
 echo "     export OPENAI_API_KEY='your-openai-key'       # For Shell-GPT, Aider with GPT"
